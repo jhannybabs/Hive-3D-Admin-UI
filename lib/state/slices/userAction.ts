@@ -34,7 +34,7 @@ export const fetchUsers = createAsyncThunk<User[]>(
   "user/fetchUsers",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://10.34.126.49:2701/users/get-all-users", {
+      const res = await fetch("http://3.107.22.251:2701/users/get-all-users", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -52,7 +52,7 @@ export const fetchUserById = createAsyncThunk<User, string>(
   "user/fetchUserById",
   async (id, thunkAPI) => {
     try {
-      const res = await fetch(`http://10.34.126.49:2701/users/get-user/${id}`, {
+      const res = await fetch(`http://3.107.22.251:2701/users/get-user/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -71,7 +71,7 @@ export const updateUserAsync = createAsyncThunk<User, User>(
   async (user, thunkAPI) => {
     try {
       const res = await fetch(
-        `http://10.34.126.49:2701/users/update-user/${user.id}`,
+        `http://3.107.22.251:2701/users/update-user/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -94,7 +94,7 @@ export const deleteUserAsync = createAsyncThunk<string, string>(
   "user/deleteUser",
   async (id, thunkAPI) => {
     try {
-      const res = await fetch(`http://10.34.126.49:2701/users/delete-user/${id}`, {
+      const res = await fetch(`http://3.107.22.251:2701/users/delete-user/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

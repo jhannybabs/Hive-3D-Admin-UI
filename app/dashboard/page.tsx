@@ -27,8 +27,8 @@ export default function DashboardPage() {
         setError(null);
 
         const [resSummary, resActivities] = await Promise.all([
-          fetch("http://10.34.126.49:2701/dashboard/summary"),
-          fetch("http://10.34.126.49:2701/dashboard/activities"),
+          fetch("http://3.107.22.251:2701/dashboard/summary"),
+          fetch("http://3.107.22.251:2701/dashboard/activities"),
         ]);
 
         if (!resSummary.ok || !resActivities.ok) {

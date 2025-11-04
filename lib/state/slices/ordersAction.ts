@@ -54,7 +54,7 @@ export const fetchOrders = createAsyncThunk<Order[]>(
   "order/fetchOrders",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://10.34.126.49:2701/orders", {
+      const res = await fetch("http://3.107.22.251:2701/orders", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -73,7 +73,7 @@ export const updateOrderStatus = createAsyncThunk<
   { orderId: string; status: string }
 >("order/updateOrderStatus", async ({ orderId, status }, thunkAPI) => {
   try {
-    const res = await fetch(`http://10.34.126.49:2701/orders/${orderId}/status`, {
+    const res = await fetch(`http://3.107.22.251:2701/orders/${orderId}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
