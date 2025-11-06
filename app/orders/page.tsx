@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/state/store";
-import {
-  fetchOrders,
-  updateOrderStatus,
-} from "@/lib/state/slices/ordersAction";
+import { fetchOrders } from "@/lib/state/slices/ordersAction";
 
 export default function OrdersPage() {
   const {
@@ -46,15 +43,9 @@ export default function OrdersPage() {
 
     setUpdatingStatus(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      await dispatch(
-        updateOrderStatus({ orderId: selectedOrder._id, status: newStatus })
-      ).unwrap();
-
-      await dispatch(fetchOrders());
-
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       setSelectedOrder({ ...selectedOrder, status: newStatus });
+      await dispatch(fetchOrders());
     } catch (err: any) {
       console.error("Failed to update status:", err);
     } finally {
@@ -112,7 +103,6 @@ export default function OrdersPage() {
                 {filteredOrders.length === 1 ? "order" : "orders"}
               </p>
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
@@ -136,7 +126,6 @@ export default function OrdersPage() {
                   />
                 </svg>
               </div>
-
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -156,7 +145,6 @@ export default function OrdersPage() {
           </div>
         </div>
       </div>
-
       <div className="px-6 lg:px-8 xl:px-12 py-6">
         {filteredOrders.length === 0 ? (
           <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-12 text-center">
@@ -224,7 +212,6 @@ export default function OrdersPage() {
                     </span>
                   </div>
                 </div>
-
                 <div className="p-5 space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -251,7 +238,6 @@ export default function OrdersPage() {
                       </p>
                     </div>
                   </div>
-
                   <div className="bg-yellow-50 rounded-xl p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">
@@ -273,7 +259,6 @@ export default function OrdersPage() {
                       </span>
                     </div>
                   </div>
-
                   <div>
                     <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
                       <svg
@@ -314,7 +299,6 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 text-xs text-gray-500 pt-3 border-t border-gray-200">
                     <svg
                       className="w-4 h-4"
@@ -336,7 +320,6 @@ export default function OrdersPage() {
                     })}
                   </div>
                 </div>
-
                 <div className="px-5 pb-4">
                   <button className="w-full py-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-lg font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     View Details
@@ -347,7 +330,6 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
-
       {selectedOrder && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -383,7 +365,6 @@ export default function OrdersPage() {
                 </svg>
               </button>
             </div>
-
             <div className="p-6 space-y-6">
               {selectedOrder.status !== "cancelled" ? (
                 <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-200">
@@ -600,7 +581,6 @@ export default function OrdersPage() {
                   </div>
                 </div>
               )}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-yellow-50 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -626,7 +606,6 @@ export default function OrdersPage() {
                     {selectedOrder.userId.email}
                   </p>
                 </div>
-
                 <div className="bg-green-50 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <svg
@@ -655,7 +634,6 @@ export default function OrdersPage() {
                   </p>
                 </div>
               </div>
-
               <div className="bg-blue-50 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                   <svg
@@ -694,7 +672,6 @@ export default function OrdersPage() {
                   {selectedOrder.shippingAddress.phone}
                 </p>
               </div>
-
               <div>
                 <p className="text-lg font-semibold text-gray-800 mb-4">
                   Order Items
@@ -732,7 +709,6 @@ export default function OrdersPage() {
                   ))}
                 </div>
               </div>
-
               <div className="border-t pt-4">
                 <p className="text-lg font-semibold text-gray-800 mb-4">
                   Order Timeline
@@ -782,7 +758,6 @@ export default function OrdersPage() {
                 </div>
               </div>
             </div>
-
             {selectedOrder.status !== "cancelled" && (
               <div className="sticky bottom-0 bg-gradient-to-r from-yellow-400 to-orange-400 px-6 py-4 flex justify-end gap-3">
                 <button
