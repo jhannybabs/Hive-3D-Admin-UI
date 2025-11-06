@@ -4,7 +4,7 @@ import clientPromise from "../../../lib/mongodb";
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db("clo-3d");
+    const db = client.db("hive-3d");
     const users = await db
       .collection("users")
       .find({}, { projection: { password: 0 } }) // wag isama password
@@ -13,11 +13,14 @@ export async function GET() {
     // map _id to id para sa frontend
     const formattedUsers = users.map((u) => ({
       id: u._id.toString(),
+      userId: u.userId,
       fullName: u.fullName,
       email: u.email,
       role: u.role,
       avatar: u.avatar || null,
-      createdAt: u.createdAt
+      isVerified: u.isVerified,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
     }));
 
     return NextResponse.json(formattedUsers);

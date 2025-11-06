@@ -21,6 +21,7 @@ export default function UsersPage() {
       try {
         const response = await fetch("/api/users");
         const data: User[] = await response.json();
+        console.log(data);
         if (data.length > 0) {
           dispatch(setUser(data));
         }
