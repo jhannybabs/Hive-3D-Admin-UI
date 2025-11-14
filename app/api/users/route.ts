@@ -4,13 +4,12 @@ import clientPromise from "../../../lib/mongodb";
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db("hive-3d");
+    const db = client.db(process.env.DATABASE_NAME || "hive-3d");
     const users = await db
       .collection("users")
-      .find({}, { projection: { password: 0 } }) // wag isama password
+      .find({}, { projection: { password: 0 } })
       .toArray();
 
-    // map _id to id para sa frontend
     const formattedUsers = users.map((u) => ({
       id: u._id.toString(),
       userId: u.userId,
@@ -25,7 +24,6 @@ export async function GET() {
 
     return NextResponse.json(formattedUsers);
   } catch (error: any) {
-    console.error("Error fetching users:", error);
     return NextResponse.json(
       { message: "Failed to fetch users" },
       { status: 500 }

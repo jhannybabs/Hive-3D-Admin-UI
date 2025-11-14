@@ -6,7 +6,7 @@ import axios from "axios";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 
 interface Design {
-  _id: number;
+  _id: string;
   designName: string;
   category: string;
   description: string;
@@ -20,7 +20,7 @@ export default function DesignsPage() {
   const router = useRouter();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -32,7 +32,7 @@ export default function DesignsPage() {
         );
         setDesigns(res.data.response || []);
       } catch (err) {
-        console.error("Error fetching designs:", err);
+        // Error fetching designs
       } finally {
         setLoading(false);
       }
@@ -40,7 +40,7 @@ export default function DesignsPage() {
     fetchDesigns();
   }, []);
 
-  const handleDelete = (designId: number) => {
+  const handleDelete = (designId: string) => {
     setSelectedId(designId);
     setShowModal(true);
   };
@@ -68,7 +68,7 @@ export default function DesignsPage() {
 
   return (
     <div className="mx-auto p-6">
-      <h1 className="text-2xl font-bold text-yellow-600 mb-6">Designs</h1>
+      <h1 className="text-2xl font-bold text-yellow-600 mb-6 text-right lg:text-left ml-16 lg:ml-0">Designs</h1>
 
       {loading ? (
         <p className="text-gray-500">Loading designs...</p>

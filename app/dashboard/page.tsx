@@ -27,8 +27,8 @@ export default function DashboardPage() {
         setError(null);
 
         const [resSummary, resActivities] = await Promise.all([
-          fetch("http://3.107.22.251:2701/dashboard/summary"),
-          fetch("http://3.107.22.251:2701/dashboard/activities"),
+          fetch("http://192.168.254.106:2701/dashboard/summary"),
+          fetch("http://192.168.254.106:2701/dashboard/activities"),
         ]);
 
         if (!resSummary.ok || !resActivities.ok) {
@@ -51,34 +51,34 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-yellow-600 mb-6">Dashboard</h1>
+    <div className="w-full">
+      <h1 className="text-xl sm:text-2xl font-bold text-yellow-600 mb-4 sm:mb-6 text-right lg:text-left ml-16 lg:ml-0">Dashboard</h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-yellow-700">Total Users</h2>
-          <p className="text-3xl font-bold text-yellow-900 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-900 mt-2">
             {summary?.totalUsers ?? 0}
           </p>
           <span className="text-xs text-yellow-600">Active this month</span>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-yellow-700">
             Total Designs
           </h2>
-          <p className="text-3xl font-bold text-yellow-900 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-900 mt-2">
             {summary?.totalDesigns ?? 0}
           </p>
           <span className="text-xs text-yellow-600">Updated recently</span>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-yellow-700">
             Total Orders
           </h2>
-          <p className="text-3xl font-bold text-yellow-900 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-900 mt-2">
             {summary?.totalOrders ?? 0}
           </p>
           <span className="text-xs text-yellow-600">Tracked automatically</span>
@@ -86,11 +86,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="mt-10">
-        <h2 className="text-lg font-bold text-yellow-700 mb-4">
+      <div className="mt-6 sm:mt-10">
+        <h2 className="text-base sm:text-lg font-bold text-yellow-700 mb-3 sm:mb-4">
           Recent Activity
         </h2>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-5">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow p-4 sm:p-5 overflow-x-auto">
           {loading && <p className="text-yellow-600">Loading...</p>}
           {error && <p className="text-red-600">Error: {error}</p>}
           {!loading && !error && (

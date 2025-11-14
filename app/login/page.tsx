@@ -20,11 +20,12 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/admin-login", { email, password });
       // unwrap RESPONSE wrapper
-      const { access_token, role } = res.data.response;
+      const { access_token, role, fullName, email: adminEmail } = res.data.response;
 
       // Save token sa localStorage
       localStorage.setItem("token", access_token);
       localStorage.setItem("role", role);
+      localStorage.setItem("adminName", fullName || adminEmail || "Admin");
 
       // Backend na ang nag‑enforce ng admin role,
       // so diretso na lang sa dashboard

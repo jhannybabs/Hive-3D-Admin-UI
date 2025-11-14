@@ -24,6 +24,15 @@ export interface ShippingAddress {
   _id: string;
 }
 
+export interface Payment {
+  _id: string;
+  paymentMethod: "paymongo_gcash" | "cod";
+  status: "unpaid" | "paid";
+  amount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Order {
   _id: string;
   userId: {
@@ -36,6 +45,8 @@ export interface Order {
   totalAmount: number;
   shippingAddress: ShippingAddress;
   paymentMethod: string;
+  paymentStatus?: string;
+  paymentId?: Payment;
   orderedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -54,14 +65,14 @@ export const fetchOrders = createAsyncThunk<Order[]>(
   "order/fetchOrders",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://3.107.22.251:2701/orders", {
+      const res = await fetch("http://192.168.254.106:2701/orders", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const response = await res.json();
-      return response.response as Order[]; // unwrap array
+      return response.response as Order[];
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message);
     }
@@ -73,14 +84,17 @@ export const updateOrderStatus = createAsyncThunk<
   { orderId: string; status: string }
 >("order/updateOrderStatus", async ({ orderId, status }, thunkAPI) => {
   try {
-    const res = await fetch(`http://3.107.22.251:2701/orders/${orderId}/status`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({ status }),
-    });
+    const res = await fetch(
+      `http://192.168.254.106:2701/orders/${orderId}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
 
     if (!res.ok) throw new Error("Failed to update order status");
     const response = await res.json();
@@ -89,6 +103,133 @@ export const updateOrderStatus = createAsyncThunk<
     return thunkAPI.rejectWithValue(err.message);
   }
 });
+
+export const updateCODPaymentStatus = createAsyncThunk<
+  Order,
+  { orderId: string; status: "paid" | "unpaid" }
+>("order/updateCODPaymentStatus", async ({ orderId, status }, thunkAPI) => {
+  try {
+    // Use the generic payment status endpoint that works for both COD and GCash
+    const res = await fetch(
+      `http://192.168.254.106:2701/payments/update-payment-status/${orderId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
+    if (!res.ok) {
+      const errorText = await res.text();
+      let errorMessage = `Failed to update payment status (${res.status})`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const response = await res.json();
+
+    // Check if response structure is correct
+    if (!response || typeof response !== "object") {
+      throw new Error("Invalid response from server");
+    }
+
+    if (!response.response) {
+      throw new Error(
+        "Invalid response structure from server - missing 'response' field"
+      );
+    }
+
+    if (!response.response.order) {
+      const errorMsg =
+        response.message ||
+        "Invalid response structure from server - missing 'order' field";
+      throw new Error(errorMsg);
+    }
+
+    const order = response.response.order;
+
+    // Ensure _id exists (in case lean() converts it)
+    if (!order._id && order.id) {
+      order._id = order.id;
+    }
+
+    if (!order._id) {
+      throw new Error("Order missing _id field");
+    }
+
+    return order as Order;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.message || "Failed to update payment status"
+    );
+  }
+});
+
+export const confirmCODPayment = createAsyncThunk<Order, string>(
+  "order/confirmCODPayment",
+  async (orderId, thunkAPI) => {
+    try {
+      const res = await fetch(
+        `http://192.168.254.106:2701/payments/confirm-cod/${orderId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = `Failed to confirm COD payment (${res.status})`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const response = await res.json();
+      
+      // Check if response structure is correct
+      if (!response || typeof response !== 'object') {
+        throw new Error("Invalid response from server");
+      }
+      
+      if (!response.response) {
+        throw new Error("Invalid response structure from server - missing 'response' field");
+      }
+      
+      if (!response.response.order) {
+        const errorMsg = response.message || "Invalid response structure from server - missing 'order' field";
+        throw new Error(errorMsg);
+      }
+      
+      const order = response.response.order;
+      
+      // Ensure _id exists (in case lean() converts it)
+      if (!order._id && order.id) {
+        order._id = order.id;
+      }
+      
+      if (!order._id) {
+        throw new Error("Order missing _id field");
+      }
+      
+      return order as Order;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.message || "Failed to confirm COD payment");
+    }
+  }
+);
 
 const orderSlice = createSlice({
   name: "order",
@@ -121,11 +262,37 @@ const orderSlice = createSlice({
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         state.loading = false;
         const idx = state.value.findIndex((o) => o._id === action.payload._id);
-        if (idx >= 0) {
-          state.value[idx] = action.payload;
-        }
+        if (idx >= 0) state.value[idx] = action.payload;
       })
       .addCase(updateOrderStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updateCODPaymentStatus.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateCODPaymentStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload && action.payload._id) {
+          const idx = state.value.findIndex((o) => o._id === action.payload._id);
+          if (idx >= 0) state.value[idx] = action.payload;
+        }
+      })
+      .addCase(updateCODPaymentStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(confirmCODPayment.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(confirmCODPayment.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload && action.payload._id) {
+          const idx = state.value.findIndex((o) => o._id === action.payload._id);
+          if (idx >= 0) state.value[idx] = action.payload;
+        }
+      })
+      .addCase(confirmCODPayment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

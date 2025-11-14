@@ -140,7 +140,7 @@ export default function EditUserPage() {
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent text-right lg:text-left ml-16 lg:ml-0">
                   Edit User
                 </h1>
                 <p className="text-gray-600 text-sm mt-1">

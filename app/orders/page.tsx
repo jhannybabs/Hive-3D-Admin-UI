@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/state/store";
-import { fetchOrders } from "@/lib/state/slices/ordersAction";
+import {
+  fetchOrders,
+  updateOrderStatus,
+  updateCODPaymentStatus,
+} from "@/lib/state/slices/ordersAction";
 
 export default function OrdersPage() {
   const {
@@ -15,12 +19,20 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [tempOrderStatus, setTempOrderStatus] = useState<string>("");
+  const [tempPaymentStatus, setTempPaymentStatus] = useState<string>("");
   const [savingChanges, setSavingChanges] = useState(false);
 
   useEffect(() => {
     dispatch(fetchOrders());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setTempOrderStatus(selectedOrder.status || "");
+      setTempPaymentStatus(selectedOrder.paymentStatus || "unpaid");
+    }
+  }, [selectedOrder]);
 
   const filteredOrders = orders
     .filter((order) => {
@@ -38,18 +50,45 @@ export default function OrdersPage() {
       return new Date(b.orderedAt).getTime() - new Date(a.orderedAt).getTime();
     });
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleSaveChanges = async () => {
     if (!selectedOrder) return;
 
-    setUpdatingStatus(true);
+    setSavingChanges(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+      // Update order status
+      await dispatch(
+        updateOrderStatus({
+          orderId: selectedOrder._id,
+          status: tempOrderStatus,
+        })
+      ).unwrap();
+
+      // If payment status changed, update payment status (for both COD and GCash)
+      if (
+        (selectedOrder.paymentMethod === "cod" ||
+          selectedOrder.paymentMethod === "paymongo_gcash") &&
+        tempPaymentStatus !== selectedOrder.paymentStatus
+      ) {
+        try {
+          await dispatch(
+            updateCODPaymentStatus({
+              orderId: selectedOrder._id,
+              status: tempPaymentStatus as "paid" | "unpaid",
+            })
+          ).unwrap();
+        } catch (paymentErr: any) {
+          // Don't fail the whole operation if payment status update fails
+          // We'll refetch orders anyway to get the latest state
+        }
+      }
+
+      // Always refetch orders to get the latest state
       await dispatch(fetchOrders());
+      setSelectedOrder(null);
     } catch (err: any) {
-      console.error("Failed to update status:", err);
+      // Failed to update
     } finally {
-      setUpdatingStatus(false);
+      setSavingChanges(false);
     }
   };
 
@@ -95,7 +134,7 @@ export default function OrdersPage() {
         <div className="px-6 lg:px-8 xl:px-12 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent text-right lg:text-left ml-16 lg:ml-0">
                 Orders Management
               </h1>
               <p className="text-gray-600 text-sm mt-1">
@@ -103,6 +142,7 @@ export default function OrdersPage() {
                 {filteredOrders.length === 1 ? "order" : "orders"}
               </p>
             </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
@@ -126,17 +166,15 @@ export default function OrdersPage() {
                   />
                 </svg>
               </div>
+
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all text-sm appearance-none cursor-pointer"
               >
                 <option value="all">All Status</option>
-                <option value="awaiting payment">Awaiting Payment</option>
-                <option value="awaiting cod">Awaiting COD</option>
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
-                <option value="paid">Paid</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
@@ -145,6 +183,7 @@ export default function OrdersPage() {
           </div>
         </div>
       </div>
+
       <div className="px-6 lg:px-8 xl:px-12 py-6">
         {filteredOrders.length === 0 ? (
           <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-12 text-center">
@@ -196,15 +235,11 @@ export default function OrdersPage() {
                           ? "bg-green-100 text-green-700"
                           : order.status === "shipped"
                           ? "bg-blue-100 text-blue-700"
-                          : order.status === "paid"
-                          ? "bg-purple-100 text-purple-700"
                           : order.status === "processing"
                           ? "bg-orange-100 text-orange-700"
-                          : order.status === "awaiting payment"
-                          ? "bg-amber-100 text-amber-700"
-                          : order.status === "awaiting cod"
-                          ? "bg-teal-100 text-teal-700"
-                          : "bg-yellow-100 text-yellow-700"
+                          : order.status === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {order.status.charAt(0).toUpperCase() +
@@ -212,6 +247,7 @@ export default function OrdersPage() {
                     </span>
                   </div>
                 </div>
+
                 <div className="p-5 space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -238,6 +274,7 @@ export default function OrdersPage() {
                       </p>
                     </div>
                   </div>
+
                   <div className="bg-yellow-50 rounded-xl p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">
@@ -259,6 +296,7 @@ export default function OrdersPage() {
                       </span>
                     </div>
                   </div>
+
                   <div>
                     <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
                       <svg
@@ -299,6 +337,7 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2 text-xs text-gray-500 pt-3 border-t border-gray-200">
                     <svg
                       className="w-4 h-4"
@@ -320,6 +359,7 @@ export default function OrdersPage() {
                     })}
                   </div>
                 </div>
+
                 <div className="px-5 pb-4">
                   <button className="w-full py-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-lg font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     View Details
@@ -330,6 +370,7 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
       {selectedOrder && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -365,194 +406,156 @@ export default function OrdersPage() {
                 </svg>
               </button>
             </div>
+
             <div className="p-6 space-y-6">
-              {selectedOrder.status !== "cancelled" ? (
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-gray-700 flex items-center">
-                      <svg
-                        className="w-5 h-5 mr-2 text-yellow-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+              {selectedOrder.status !== "cancelled" && (
+                <>
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-gray-700 flex items-center">
+                        <svg
+                          className="w-5 h-5 mr-2 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Order Status
+                      </p>
+                      <span
+                        className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          tempOrderStatus === "delivered"
+                            ? "bg-green-100 text-green-700"
+                            : tempOrderStatus === "shipped"
+                            ? "bg-blue-100 text-blue-700"
+                            : tempOrderStatus === "processing"
+                            ? "bg-orange-100 text-orange-700"
+                            : tempOrderStatus === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Update Order Status
-                    </p>
-                    <span
-                      className={`px-3 py-1 text-xs font-bold rounded-full ${
-                        selectedOrder.status === "delivered"
-                          ? "bg-green-100 text-green-700"
-                          : selectedOrder.status === "shipped"
-                          ? "bg-blue-100 text-blue-700"
-                          : selectedOrder.status === "paid"
-                          ? "bg-purple-100 text-purple-700"
-                          : selectedOrder.status === "processing"
-                          ? "bg-orange-100 text-orange-700"
-                          : selectedOrder.status === "awaiting payment"
-                          ? "bg-amber-100 text-amber-700"
-                          : selectedOrder.status === "awaiting cod"
-                          ? "bg-teal-100 text-teal-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      Current:{" "}
-                      {selectedOrder.status.charAt(0).toUpperCase() +
-                        selectedOrder.status.slice(1)}
-                    </span>
+                        Current:{" "}
+                        {tempOrderStatus.charAt(0).toUpperCase() +
+                          tempOrderStatus.slice(1)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {/* <button
+                        onClick={() => setTempOrderStatus("pending")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempOrderStatus === "pending"
+                            ? "bg-yellow-500 text-white"
+                            : "bg-white text-yellow-600 border-2 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-400"
+                        }`}
+                      >
+                        Pending
+                      </button> */}
+                      <button
+                        onClick={() => setTempOrderStatus("processing")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempOrderStatus === "processing"
+                            ? "bg-orange-500 text-white"
+                            : "bg-white text-orange-600 border-2 border-orange-200 hover:bg-orange-50 hover:border-orange-400"
+                        }`}
+                      >
+                        Processing
+                      </button>
+                      <button
+                        onClick={() => setTempOrderStatus("shipped")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempOrderStatus === "shipped"
+                            ? "bg-blue-500 text-white"
+                            : "bg-white text-blue-600 border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-400"
+                        }`}
+                      >
+                        Shipped
+                      </button>
+                      <button
+                        onClick={() => setTempOrderStatus("delivered")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempOrderStatus === "delivered"
+                            ? "bg-green-500 text-white"
+                            : "bg-white text-green-600 border-2 border-green-200 hover:bg-green-50 hover:border-green-400"
+                        }`}
+                      >
+                        Delivered
+                      </button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <button
-                      onClick={() => handleStatusChange("processing")}
-                      disabled={
-                        updatingStatus || selectedOrder.status === "processing"
-                      }
-                      className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                        selectedOrder.status === "processing"
-                          ? "bg-orange-500 text-white cursor-not-allowed"
-                          : "bg-white text-orange-600 border-2 border-orange-200 hover:bg-orange-50 hover:border-orange-400 disabled:opacity-50"
-                      }`}
-                    >
-                      {updatingStatus &&
-                      selectedOrder.status !== "processing" ? (
-                        <svg
-                          className="animate-spin h-4 w-4 mx-auto"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
+
+                  {/* Payment Status - Show for both COD and GCash orders */}
+                  {(selectedOrder.paymentMethod === "cod" ||
+                    selectedOrder.paymentMethod === "paymongo_gcash") && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-semibold text-gray-700 flex items-center">
+                          <svg
+                            className="w-5 h-5 mr-2 text-green-600"
+                            fill="none"
                             stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Processing"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange("paid")}
-                      disabled={
-                        updatingStatus || selectedOrder.status === "paid"
-                      }
-                      className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                        selectedOrder.status === "paid"
-                          ? "bg-purple-500 text-white cursor-not-allowed"
-                          : "bg-white text-purple-600 border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-400 disabled:opacity-50"
-                      }`}
-                    >
-                      {updatingStatus && selectedOrder.status !== "paid" ? (
-                        <svg
-                          className="animate-spin h-4 w-4 mx-auto"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Paid"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange("shipped")}
-                      disabled={
-                        updatingStatus || selectedOrder.status === "shipped"
-                      }
-                      className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                        selectedOrder.status === "shipped"
-                          ? "bg-blue-500 text-white cursor-not-allowed"
-                          : "bg-white text-blue-600 border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50"
-                      }`}
-                    >
-                      {updatingStatus && selectedOrder.status !== "shipped" ? (
-                        <svg
-                          className="animate-spin h-4 w-4 mx-auto"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Shipped"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange("delivered")}
-                      disabled={
-                        updatingStatus || selectedOrder.status === "delivered"
-                      }
-                      className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                        selectedOrder.status === "delivered"
-                          ? "bg-green-500 text-white cursor-not-allowed"
-                          : "bg-white text-green-600 border-2 border-green-200 hover:bg-green-50 hover:border-green-400 disabled:opacity-50"
-                      }`}
-                    >
-                      {updatingStatus &&
-                      selectedOrder.status !== "delivered" ? (
-                        <svg
-                          className="animate-spin h-4 w-4 mx-auto"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Delivered"
-                      )}
-                    </button>
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                            />
+                          </svg>
+                          Payment Status
+                          {selectedOrder.paymentMethod === "cod"
+                            ? " (COD)"
+                            : " (GCash)"}
+                        </p>
+                      <span
+                        className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          tempPaymentStatus === "paid"
+                            ? "bg-green-100 text-green-700"
+                            : tempPaymentStatus === "refunded"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        Current:{" "}
+                        {tempPaymentStatus.charAt(0).toUpperCase() +
+                          tempPaymentStatus.slice(1)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setTempPaymentStatus("unpaid")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempPaymentStatus === "unpaid"
+                            ? "bg-yellow-500 text-white"
+                            : "bg-white text-yellow-600 border-2 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-400"
+                        }`}
+                      >
+                        Unpaid
+                      </button>
+                      <button
+                        onClick={() => setTempPaymentStatus("paid")}
+                        className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                          tempPaymentStatus === "paid"
+                            ? "bg-green-500 text-white"
+                            : "bg-white text-green-600 border-2 border-green-200 hover:bg-green-50 hover:border-green-400"
+                        }`}
+                      >
+                        Paid
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                  )}
+                </>
+              )}
+
+              {selectedOrder.status === "cancelled" && (
                 <div className="bg-red-50 rounded-xl p-4 border-2 border-red-200">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -581,6 +584,7 @@ export default function OrdersPage() {
                   </div>
                 </div>
               )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-yellow-50 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -606,6 +610,7 @@ export default function OrdersPage() {
                     {selectedOrder.userId.email}
                   </p>
                 </div>
+
                 <div className="bg-green-50 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <svg
@@ -634,6 +639,7 @@ export default function OrdersPage() {
                   </p>
                 </div>
               </div>
+
               <div className="bg-blue-50 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                   <svg
@@ -669,9 +675,10 @@ export default function OrdersPage() {
                   {selectedOrder.shippingAddress.zip}
                 </p>
                 <p className="text-sm text-gray-600 mt-2">
-                  {selectedOrder.shippingAddress.phone}
+                  📞 {selectedOrder.shippingAddress.phone}
                 </p>
               </div>
+
               <div>
                 <p className="text-lg font-semibold text-gray-800 mb-4">
                   Order Items
@@ -709,6 +716,7 @@ export default function OrdersPage() {
                   ))}
                 </div>
               </div>
+
               <div className="border-t pt-4">
                 <p className="text-lg font-semibold text-gray-800 mb-4">
                   Order Timeline
@@ -758,6 +766,7 @@ export default function OrdersPage() {
                 </div>
               </div>
             </div>
+
             {selectedOrder.status !== "cancelled" && (
               <div className="sticky bottom-0 bg-gradient-to-r from-yellow-400 to-orange-400 px-6 py-4 flex justify-end gap-3">
                 <button
@@ -767,18 +776,8 @@ export default function OrdersPage() {
                   Close
                 </button>
                 <button
-                  onClick={async () => {
-                    setSavingChanges(true);
-                    try {
-                      await new Promise((resolve) => setTimeout(resolve, 2000));
-                      await dispatch(fetchOrders());
-                    } catch (err) {
-                      console.error("Failed to save:", err);
-                    } finally {
-                      setSavingChanges(false);
-                    }
-                  }}
-                  disabled={updatingStatus || savingChanges}
+                  onClick={handleSaveChanges}
+                  disabled={savingChanges}
                   className="px-6 py-2 bg-white text-yellow-600 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                 >
                   {savingChanges ? (

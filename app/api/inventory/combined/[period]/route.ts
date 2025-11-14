@@ -1,30 +1,28 @@
 import { NextResponse } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { period: "daily" | "weekly" | "monthly" } }
+  _req: Request,
+  context: { params: Promise<{ period: "daily" | "weekly" | "monthly" }> }
 ) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/inventory/combined/${params.period}`,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const { period } = await context.params;
 
-    const contentType = res.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/inventory/combined/${period}`;
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
       const text = await res.text();
       return NextResponse.json(
-        {
-          message: "Upstream returned non-JSON",
-          status: res.status,
-          body: text,
-        },
-        { status: 502 }
+        { message: "Backend error", status: res.status, body: text },
+        { status: res.status }
       );
     }
 
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    return NextResponse.json(Array.isArray(data) ? data : [], { status: 200 });
   } catch (err: any) {
     return NextResponse.json(
       { message: "Error fetching inventory combined", error: err.message },

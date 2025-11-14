@@ -21,12 +21,11 @@ export default function UsersPage() {
       try {
         const response = await fetch("/api/users");
         const data: User[] = await response.json();
-        console.log(data);
         if (data.length > 0) {
           dispatch(setUser(data));
         }
       } catch (err) {
-        console.error("Failed to fetch users:", err);
+        // Failed to fetch users
       } finally {
         setLoading(false);
       }
@@ -66,10 +65,10 @@ export default function UsersPage() {
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-amber-50">
       {/* Header */}
       <div className="bg-white/70 backdrop-blur-xl shadow-lg border-b border-white/20 sticky top-0 z-30">
-        <div className="px-6 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent text-right lg:text-left ml-16 lg:ml-0">
                 Users Management
               </h1>
               <p className="text-gray-600 text-sm mt-1">
@@ -118,9 +117,9 @@ export default function UsersPage() {
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {filteredUsers.length === 0 ? (
-          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-12 text-center">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 sm:p-12 text-center">
             <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-10 h-10 text-yellow-600"
@@ -144,7 +143,7 @@ export default function UsersPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredUsers.map((user) => (
               <div
                 key={user.id}

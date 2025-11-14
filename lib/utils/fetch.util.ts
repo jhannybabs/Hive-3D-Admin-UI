@@ -21,7 +21,6 @@ export const GET: Function = async (
     let data: Awaited<ResponseDto> = await response.data;
     return RESPONSE(data.status, data, data.message);
   } catch (error: any) {
-    console.log(error);
     return RESPONSE(400, error, "Bad Request");
   }
 };
@@ -45,7 +44,6 @@ export const POST: Function = async (
     let data: Awaited<ResponseDto> = await response.data;
     return RESPONSE(data.status, data, data.message);
   } catch (error: any) {
-    console.log(error);
     return RESPONSE(400, error, "Bad Request");
   }
 };
@@ -69,7 +67,6 @@ export const PUT: Function = async (
     let data: Awaited<ResponseDto> = await response.data;
     return RESPONSE(data.status, data, data.message);
   } catch (error: any) {
-    console.log(error);
     return RESPONSE(400, error, "Bad Request");
   }
 };
@@ -93,7 +90,6 @@ export const DELETE: Function = async (
     let data: Awaited<ResponseDto> = await response.data;
     return RESPONSE(data.status, data, data.message);
   } catch (error: any) {
-    console.log(error);
     return RESPONSE(400, error, "Bad Request");
   }
 };
