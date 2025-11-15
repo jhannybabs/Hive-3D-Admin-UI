@@ -13,11 +13,32 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
     });
 
+    // Handle non-OK responses
+    if (!backendRes.ok) {
+      const errorText = await backendRes.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText || "Authentication failed" };
+      }
+      return NextResponse.json(
+        errorData,
+        { status: backendRes.status }
+      );
+    }
+
+    // Parse response as JSON
     const data = await backendRes.json();
-    return NextResponse.json(data, { status: backendRes.status });
+    return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
+    console.error("Admin login error:", error);
     return NextResponse.json(
-      { message: "Failed to connect to backend", error: error.message },
+      { 
+        message: "Failed to connect to backend", 
+        error: error.message,
+        statusCode: 500
+      },
       { status: 500 }
     );
   }
