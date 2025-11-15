@@ -4,9 +4,10 @@ export async function GET(
   req: Request,
   context: { params: Promise<{ path: string[] }> }
 ) {
+  let pathStr = "unknown";
   try {
     const { path } = await context.params;
-    const pathStr = path.join("/");
+    pathStr = path.join("/");
     
     // Normalize backend URL - remove trailing slash if present
     let backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
@@ -90,15 +91,30 @@ export async function POST(
   req: Request,
   context: { params: Promise<{ path: string[] }> }
 ) {
+  let pathStr = "unknown";
   try {
     const { path } = await context.params;
-    const pathStr = path.join("/");
+    pathStr = path.join("/");
     
     // Normalize backend URL - remove trailing slash if present
     let backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
     backendUrl = backendUrl.replace(/\/+$/, ""); // Remove trailing slashes
     
-    const body = await req.json();
+    // Parse request body if present (some POST requests like backfill-inventory don't have a body)
+    let body: any = null;
+    try {
+      const contentType = req.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const text = await req.text();
+        if (text && text.trim()) {
+          body = JSON.parse(text);
+        }
+      }
+    } catch (parseError: any) {
+      // If body is empty or invalid JSON, continue with null body
+      console.warn(`[Proxy POST] Could not parse request body for ${pathStr}:`, parseError.message);
+    }
+    
     const backendApiUrl = `${backendUrl}/${pathStr}`;
     
     // Forward authorization header if present
@@ -124,7 +140,7 @@ export async function POST(
       backendRes = await fetch(backendApiUrl, {
         method: "POST",
         headers,
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -177,9 +193,10 @@ export async function PUT(
   req: Request,
   context: { params: Promise<{ path: string[] }> }
 ) {
+  let pathStr = "unknown";
   try {
     const { path } = await context.params;
-    const pathStr = path.join("/");
+    pathStr = path.join("/");
     
     // Normalize backend URL - remove trailing slash if present
     let backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
@@ -260,9 +277,10 @@ export async function DELETE(
   req: Request,
   context: { params: Promise<{ path: string[] }> }
 ) {
+  let pathStr = "unknown";
   try {
     const { path } = await context.params;
-    const pathStr = path.join("/");
+    pathStr = path.join("/");
     
     // Normalize backend URL - remove trailing slash if present
     let backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";

@@ -90,19 +90,45 @@ export default function InventoryPage() {
               clearTimeout(timeoutId);
 
               if (!backfillRes.ok) {
-                const errorText = await backfillRes.text();
-                let errorData;
+                let errorText = "";
+                let errorData: any = null;
+                
                 try {
-                  errorData = JSON.parse(errorText);
-                } catch {
-                  errorData = { message: errorText || "Backfill failed" };
+                  errorText = await backfillRes.text();
+                  if (errorText) {
+                    try {
+                      errorData = JSON.parse(errorText);
+                    } catch {
+                      errorData = { message: errorText };
+                    }
+                  }
+                } catch (textError) {
+                  console.error("[Backfill] Error reading response text:", textError);
                 }
-                console.error("[Backfill] Error:", errorData);
+                
+                // Log each property separately for better debugging
+                console.error("[Backfill] Backend Error Response:");
+                console.error("  Status:", backfillRes.status);
+                console.error("  Status Text:", backfillRes.statusText);
+                console.error("  Error Text:", errorText);
+                console.error("  Error Data:", errorData);
+                console.error("  Headers:", Object.fromEntries(backfillRes.headers.entries()));
+                console.error("  OK:", backfillRes.ok);
+                console.error("  URL:", backfillRes.url);
+                console.error("  Full Response:", backfillRes);
                 // Don't show error to user, just silently fail
                 return;
               }
 
-              const backfillData = await backfillRes.json();
+              let backfillData;
+              try {
+                const responseText = await backfillRes.text();
+                backfillData = responseText ? JSON.parse(responseText) : {};
+                console.log("[Backfill] Response:", backfillData);
+              } catch (parseError) {
+                console.error("[Backfill] Error parsing response:", parseError);
+                return;
+              }
               
               if (backfillData.response) {
                 const result = backfillData.response;
@@ -120,7 +146,14 @@ export default function InventoryPage() {
               if (backfillErr.name === "AbortError") {
                 console.warn("[Backfill] Request timeout - backfill may still be processing on backend");
               } else {
-                console.error("[Backfill] Error:", backfillErr);
+                // Log detailed error information
+                console.error("[Backfill] Error:", {
+                  message: backfillErr.message || "Unknown error",
+                  name: backfillErr.name,
+                  stack: backfillErr.stack,
+                  response: backfillErr.response,
+                  error: backfillErr,
+                });
               }
               // Don't show error to user, just silently fail
             } finally {
