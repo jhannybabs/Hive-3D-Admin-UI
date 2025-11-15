@@ -150,8 +150,9 @@ export default function UploadDesignPage() {
         status,
       };
 
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/designs/create-design`,
+        `/api/proxy/designs/create-design`,
         payload
       );
       setMessage(res.data.message || "Design saved successfully!");

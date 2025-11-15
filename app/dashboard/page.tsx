@@ -26,9 +26,10 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
 
+        // Use API proxy routes for HTTPS compatibility (no mixed content issues)
         const [resSummary, resActivities] = await Promise.all([
-          fetch("http://3.107.22.251:2701/dashboard/summary"),
-          fetch("http://3.107.22.251:2701/dashboard/activities"),
+          fetch("/api/proxy/dashboard/summary"),
+          fetch("/api/proxy/dashboard/activities"),
         ]);
 
         if (!resSummary.ok || !resActivities.ok) {

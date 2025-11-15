@@ -26,8 +26,8 @@ export default function EditDesignPage() {
   useEffect(() => {
     const fetchDesign = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL; // e.g., http://3.107.22.251:2701
-        const res = await axios.get(`${base}/designs/get-design/${id}`);
+        // Use API proxy route for HTTPS compatibility (no mixed content issues)
+        const res = await axios.get(`/api/proxy/designs/get-design/${id}`);
 
         const d = res.data.response;
 
@@ -157,9 +157,9 @@ export default function EditDesignPage() {
         status,
       };
 
-      const base = process.env.NEXT_PUBLIC_API_URL;
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
       const res = await axios.put(
-        `${base}/designs/update-design/${id}`,
+        `/api/proxy/designs/update-design/${id}`,
         payload
       );
 

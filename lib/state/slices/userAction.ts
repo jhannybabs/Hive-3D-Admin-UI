@@ -34,7 +34,8 @@ export const fetchUsers = createAsyncThunk<User[]>(
   "user/fetchUsers",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://3.107.22.251:2701/users/get-all-users", {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
+      const res = await fetch("/api/proxy/users/get-all-users", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -52,7 +53,8 @@ export const fetchUserById = createAsyncThunk<User, string>(
   "user/fetchUserById",
   async (id, thunkAPI) => {
     try {
-      const res = await fetch(`http://3.107.22.251:2701/users/get-user/${id}`, {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
+      const res = await fetch(`/api/proxy/users/get-user/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -70,8 +72,9 @@ export const updateUserAsync = createAsyncThunk<User, User>(
   "user/updateUser",
   async (user, thunkAPI) => {
     try {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
       const res = await fetch(
-        `http://3.107.22.251:2701/users/update-user/${user.id}`,
+        `/api/proxy/users/update-user/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -94,7 +97,8 @@ export const deleteUserAsync = createAsyncThunk<string, string>(
   "user/deleteUser",
   async (id, thunkAPI) => {
     try {
-      const res = await fetch(`http://3.107.22.251:2701/users/delete-user/${id}`, {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
+      const res = await fetch(`/api/proxy/users/delete-user/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

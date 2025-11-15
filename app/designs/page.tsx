@@ -27,8 +27,9 @@ export default function DesignsPage() {
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
+        // Use API proxy route for HTTPS compatibility (no mixed content issues)
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/designs/get-all-designs`
+          `/api/proxy/designs/get-all-designs`
         );
         setDesigns(res.data.response || []);
       } catch (err) {
@@ -49,8 +50,9 @@ export default function DesignsPage() {
     if (!selectedId) return;
     setDeleting(true);
     try {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
       const res = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/designs/delete-design/${selectedId}`
+        `/api/proxy/designs/delete-design/${selectedId}`
       );
 
       setDesigns((prev) => prev.filter((d) => d._id !== selectedId));

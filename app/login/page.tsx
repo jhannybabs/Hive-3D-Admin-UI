@@ -18,7 +18,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/admin-login", { email, password });
+      // Use API route proxy instead of direct backend call (HTTPS compatibility)
+      const res = await api.post("/api/auth/admin-login", { email, password });
       // unwrap RESPONSE wrapper
       const { access_token, role, fullName, email: adminEmail } = res.data.response;
 

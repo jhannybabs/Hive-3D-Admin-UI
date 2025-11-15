@@ -73,8 +73,8 @@ export default function InventoryPage() {
             // Run backfill directly
             setBackfilling(true);
             try {
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
-              const backfillRes = await fetch(`${apiUrl}/orders/backfill-inventory`, {
+              // Use API proxy route for HTTPS compatibility (no mixed content issues)
+              const backfillRes = await fetch(`/api/proxy/orders/backfill-inventory`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",

@@ -65,7 +65,8 @@ export const fetchOrders = createAsyncThunk<Order[]>(
   "order/fetchOrders",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://3.107.22.251:2701/orders", {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
+      const res = await fetch("/api/proxy/orders", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -84,8 +85,9 @@ export const updateOrderStatus = createAsyncThunk<
   { orderId: string; status: string }
 >("order/updateOrderStatus", async ({ orderId, status }, thunkAPI) => {
   try {
+    // Use API proxy route for HTTPS compatibility (no mixed content issues)
     const res = await fetch(
-      `http://3.107.22.251:2701/orders/${orderId}/status`,
+      `/api/proxy/orders/${orderId}/status`,
       {
         method: "PUT",
         headers: {
@@ -109,9 +111,10 @@ export const updateCODPaymentStatus = createAsyncThunk<
   { orderId: string; status: "paid" | "unpaid" }
 >("order/updateCODPaymentStatus", async ({ orderId, status }, thunkAPI) => {
   try {
+    // Use API proxy route for HTTPS compatibility (no mixed content issues)
     // Use the generic payment status endpoint that works for both COD and GCash
     const res = await fetch(
-      `http://3.107.22.251:2701/payments/update-payment-status/${orderId}`,
+      `/api/proxy/payments/update-payment-status/${orderId}`,
       {
         method: "PUT",
         headers: {
@@ -176,8 +179,9 @@ export const confirmCODPayment = createAsyncThunk<Order, string>(
   "order/confirmCODPayment",
   async (orderId, thunkAPI) => {
     try {
+      // Use API proxy route for HTTPS compatibility (no mixed content issues)
       const res = await fetch(
-        `http://3.107.22.251:2701/payments/confirm-cod/${orderId}`,
+        `/api/proxy/payments/confirm-cod/${orderId}`,
         {
           method: "PUT",
           headers: {
