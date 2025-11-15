@@ -74,17 +74,37 @@ export default function InventoryPage() {
             setBackfilling(true);
             try {
               // Use API proxy route for HTTPS compatibility (no mixed content issues)
+              // Note: Backfill can take a long time, so we use a longer timeout
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout for backfill
+              
               const backfillRes = await fetch(`/api/proxy/orders/backfill-inventory`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
+                signal: controller.signal,
               });
+
+              clearTimeout(timeoutId);
+
+              if (!backfillRes.ok) {
+                const errorText = await backfillRes.text();
+                let errorData;
+                try {
+                  errorData = JSON.parse(errorText);
+                } catch {
+                  errorData = { message: errorText || "Backfill failed" };
+                }
+                console.error("[Backfill] Error:", errorData);
+                // Don't show error to user, just silently fail
+                return;
+              }
 
               const backfillData = await backfillRes.json();
               
-              if (backfillRes.ok && backfillData.response) {
+              if (backfillData.response) {
                 const result = backfillData.response;
                 
                 // Only refresh if we actually logged something
@@ -96,7 +116,13 @@ export default function InventoryPage() {
                 }
               }
             } catch (backfillErr: any) {
-              // Auto-backfill error
+              // Auto-backfill error (timeout or network error)
+              if (backfillErr.name === "AbortError") {
+                console.warn("[Backfill] Request timeout - backfill may still be processing on backend");
+              } else {
+                console.error("[Backfill] Error:", backfillErr);
+              }
+              // Don't show error to user, just silently fail
             } finally {
               setBackfilling(false);
             }

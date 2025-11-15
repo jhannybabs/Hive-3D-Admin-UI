@@ -20,6 +20,17 @@ export default function LoginPage() {
     try {
       // Use API route proxy instead of direct backend call (HTTPS compatibility)
       const res = await api.post("/api/auth/admin-login", { email, password });
+      
+      // Check if response has data
+      if (!res.data) {
+        throw new Error("No response from server");
+      }
+      
+      // Check if response has the expected structure
+      if (!res.data.response) {
+        throw new Error(res.data.message || "Invalid response format");
+      }
+      
       // unwrap RESPONSE wrapper
       const { access_token, role, fullName, email: adminEmail } = res.data.response;
 
@@ -33,12 +44,29 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err: any) {
       // Show detailed error for debugging
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          "Invalid credentials or unauthorized access.";
+      console.error("Login error:", err);
+      console.error("Error response:", err.response);
+      console.error("Error data:", err.response?.data);
+      
+      // Extract error message from different possible structures
+      let errorMessage = "Invalid credentials or unauthorized access.";
+      
+      if (err.response) {
+        // Axios error with response
+        const errorData = err.response.data;
+        errorMessage = errorData?.message || 
+                      errorData?.error || 
+                      errorData?.details ||
+                      `Server error: ${err.response.status}`;
+      } else if (err.request) {
+        // Request was made but no response received
+        errorMessage = "Cannot connect to server. Please check your connection.";
+      } else if (err.message) {
+        // Error in request setup
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
-      console.error("Login error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }

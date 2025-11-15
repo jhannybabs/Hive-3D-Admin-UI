@@ -3,18 +3,25 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
+    // Normalize backend URL - remove trailing slash if present
+    let backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
+    backendUrl = backendUrl.replace(/\/+$/, ""); // Remove trailing slashes
+    
+    // Construct full URL properly
+    const loginUrl = `${backendUrl}/auth/admin-login`;
     
     console.log("[Admin Login] Attempting login for:", body.email);
-    console.log("[Admin Login] Backend URL:", `${backendUrl}/auth/admin-login`);
+    console.log("[Admin Login] Backend URL:", loginUrl);
+    console.log("[Admin Login] Env NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
     
     let backendRes;
     try {
-      // Create abort controller for timeout
+      // Create abort controller for timeout (Vercel function timeout: 10s Hobby, 60s Pro)
+      // Reduce to 25 seconds to leave buffer for Vercel function execution
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
       
-      backendRes = await fetch(`${backendUrl}/auth/admin-login`, {
+      backendRes = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

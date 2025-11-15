@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../lib/state/store";
-import { User, setUser, removeUser } from "../../lib/state/slices/userAction";
+import { User, removeUser, fetchUsers } from "../../lib/state/slices/userAction";
 import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
@@ -17,20 +17,17 @@ export default function UsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const loadUsers = async () => {
       try {
-        const response = await fetch("/api/users");
-        const data: User[] = await response.json();
-        if (data.length > 0) {
-          dispatch(setUser(data));
-        }
-      } catch (err) {
-        // Failed to fetch users
+        // Use Redux fetchUsers instead of direct fetch (includes proper proxy route)
+        await dispatch(fetchUsers()).unwrap();
+      } catch (err: any) {
+        console.error("Failed to fetch users:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchUsers();
+    loadUsers();
   }, [dispatch]);
 
   const handleDelete = (userId: string) => {
