@@ -32,7 +32,13 @@ export default function LoginPage() {
       // so diretso na lang sa dashboard
       router.push("/dashboard");
     } catch (err: any) {
-      setError("Invalid credentials or unauthorized access.");
+      // Show detailed error for debugging
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          "Invalid credentials or unauthorized access.";
+      setError(errorMessage);
+      console.error("Login error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }

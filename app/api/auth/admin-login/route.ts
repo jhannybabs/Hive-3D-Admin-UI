@@ -8,13 +8,37 @@ export async function POST(req: Request) {
     console.log("[Admin Login] Attempting login for:", body.email);
     console.log("[Admin Login] Backend URL:", `${backendUrl}/auth/admin-login`);
     
-    const backendRes = await fetch(`${backendUrl}/auth/admin-login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    let backendRes;
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      backendRes = await fetch(`${backendUrl}/auth/admin-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+    } catch (fetchError: any) {
+      console.error("[Admin Login] Fetch error:", fetchError);
+      
+      // Return detailed error for debugging
+      return NextResponse.json(
+        { 
+          message: "Failed to connect to backend server",
+          error: fetchError.message,
+          details: fetchError.cause || "Network error - backend may be unreachable",
+          backendUrl: backendUrl,
+          statusCode: 500
+        },
+        { status: 500 }
+      );
+    }
 
     console.log("[Admin Login] Backend response status:", backendRes.status);
 
@@ -27,7 +51,10 @@ export async function POST(req: Request) {
       try {
         errorData = JSON.parse(errorText);
       } catch {
-        errorData = { message: errorText || "Authentication failed" };
+        errorData = { 
+          message: errorText || "Authentication failed",
+          statusCode: backendRes.status
+        };
       }
       return NextResponse.json(
         errorData,
@@ -43,10 +70,12 @@ export async function POST(req: Request) {
     console.error("[Admin Login] Error:", error);
     console.error("[Admin Login] Error stack:", error.stack);
     
+    // Return detailed error information
     return NextResponse.json(
       { 
-        message: "Failed to connect to backend", 
+        message: "Internal server error",
         error: error.message,
+        details: error.stack || error.toString(),
         statusCode: 500
       },
       { status: 500 }
