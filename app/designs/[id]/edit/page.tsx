@@ -26,7 +26,7 @@ export default function EditDesignPage() {
   useEffect(() => {
     const fetchDesign = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL; // e.g., http://192.168.254.106:2701
+        const base = process.env.NEXT_PUBLIC_API_URL; // e.g., http://3.107.22.251:2701
         const res = await axios.get(`${base}/designs/get-design/${id}`);
 
         const d = res.data.response;

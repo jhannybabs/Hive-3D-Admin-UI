@@ -73,7 +73,7 @@ export default function InventoryPage() {
             // Run backfill directly
             setBackfilling(true);
             try {
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.254.106:2701";
+              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://3.107.22.251:2701";
               const backfillRes = await fetch(`${apiUrl}/orders/backfill-inventory`, {
                 method: "POST",
                 headers: {

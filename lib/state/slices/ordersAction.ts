@@ -65,7 +65,7 @@ export const fetchOrders = createAsyncThunk<Order[]>(
   "order/fetchOrders",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://192.168.254.106:2701/orders", {
+      const res = await fetch("http://3.107.22.251:2701/orders", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -85,7 +85,7 @@ export const updateOrderStatus = createAsyncThunk<
 >("order/updateOrderStatus", async ({ orderId, status }, thunkAPI) => {
   try {
     const res = await fetch(
-      `http://192.168.254.106:2701/orders/${orderId}/status`,
+      `http://3.107.22.251:2701/orders/${orderId}/status`,
       {
         method: "PUT",
         headers: {
@@ -111,7 +111,7 @@ export const updateCODPaymentStatus = createAsyncThunk<
   try {
     // Use the generic payment status endpoint that works for both COD and GCash
     const res = await fetch(
-      `http://192.168.254.106:2701/payments/update-payment-status/${orderId}`,
+      `http://3.107.22.251:2701/payments/update-payment-status/${orderId}`,
       {
         method: "PUT",
         headers: {
@@ -177,7 +177,7 @@ export const confirmCODPayment = createAsyncThunk<Order, string>(
   async (orderId, thunkAPI) => {
     try {
       const res = await fetch(
-        `http://192.168.254.106:2701/payments/confirm-cod/${orderId}`,
+        `http://3.107.22.251:2701/payments/confirm-cod/${orderId}`,
         {
           method: "PUT",
           headers: {
