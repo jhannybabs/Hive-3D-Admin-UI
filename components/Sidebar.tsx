@@ -29,6 +29,28 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
     setAdminName(name);
   }, []);
 
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Skip auth check on login page
+    if (pathname === "/login") return;
+
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    // If no token or not admin, redirect to login
+    if (!token || role !== "admin") {
+      // Clear any remaining data
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("adminName");
+      
+      // Use replace to prevent back navigation
+      router.replace("/login");
+    }
+  }, [mounted, pathname, router]);
+
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -62,8 +84,11 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("role");
     localStorage.removeItem("adminName");
     
-    // Redirect to login
-    router.push("/login");
+    // Clear browser history to prevent back navigation
+    window.history.replaceState(null, "", "/login");
+    
+    // Use replace instead of push to prevent back navigation
+    router.replace("/login");
   };
 
   const navItems = [

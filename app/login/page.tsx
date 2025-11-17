@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../lib/api";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +11,16 @@ export default function LoginPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    
+    if (token && role === "admin") {
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +51,7 @@ export default function LoginPage() {
 
       // Backend na ang nag‑enforce ng admin role,
       // so diretso na lang sa dashboard
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: any) {
       // Show detailed error for debugging
       console.error("Login error:", err);
